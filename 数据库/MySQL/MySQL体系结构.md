@@ -53,7 +53,7 @@ MySQl中的查询流程：
 2. 解析器：**对SQL语句进行语法分析、语义检查**。分析器先做“**词法分析**”，输入的多个字符串和空格组成的一条SQL语句，MySQL需要识别里面字符串分别是什么，代表什么。比如“select”关键字识别成查询语句，字符串“T”识别成表名。再做语法分析。根本词法分析的结果，语法分析器会根据语法规则，判断SQL语句是否满足MySQL语法。如果SQL语句正确的话就会生成一个语法树。比如：
 
    ```sql
-   select username ismale from userinfo where age<20 and level<5 and 1=1
+   select username ismale from userinfo where age>20 and level>5 and 1=1
    ```
 
    会生成一个这样的语法树![image-20230112221924882](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230112221924882.png)
