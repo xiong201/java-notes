@@ -2,17 +2,13 @@
 
 
 
-# MySQL 命令大全
+
 
 ## 数据库操作
 
-use dbName： 选择数据库
+`use dbName`： 选择数据库
 
-show databases：返回可用的数据库列表
-
-show tables：返回当前数据库可用的表列表
-
-
+`show databases`：返回可用的数据库列表
 
 ## 表操作
 
@@ -32,6 +28,10 @@ CREATE TABLE `customers` (
   PRIMARY KEY (cust_id)
 ) ENGINE=InnoDB AUTO_INCREMENT=10009 DEFAULT CHARSET=utf8mb4;
 ```
+
+### 查询表
+
+`show tables`：返回当前数据库可用的表列表
 
 ### 修改表
 
