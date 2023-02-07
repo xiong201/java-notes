@@ -1,0 +1,453 @@
+**索引（Index）是帮助MySQL高效获取数据的数据结构**。由具体的存储引擎实现。
+
+索引的优点：
+
+1. 提高数据检索的效率，降低**数据库的IO成本**。这是创建索引最主要的原因。
+
+2. 通过创建唯一索引，保证数据库表中每一行**数据的唯一性**。
+
+3. **可以加速表和表之间的连接**。对于有依赖关系的子表和父表联合查询时，可以提高查询速度。
+
+4. 可以**显著减少查询中分组和排序的时间**。
+
+索引的缺点：
+
+1. 创建索引和维护索引要**耗费时间**，并且随着数据量的增加，耗费的时间也会增加。
+2. 索引需要占**磁盘空间**。
+3. 索引在提高查询速度的同时，也会降低**更新表的速度**。
+
+# 索引实现方案
+
+## B+树
+
+
+
+![image-20230117094650455](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230117094650455.png)
+
+B+树的根页面位置万年不动。InnoDB和MyISAM默认实现B+树实现索引。但是InnoDB叶子节点存储的是**完整数据**，而MyISAM存储的是**数据记录的地址**。
+
+
+
+
+
+# InnoDB逻辑存储结构
+
+所有数据都被逻辑地存放到表空间（tablespace）。表空间又由段（segment）、区（extent）、页（page）组成。如下图所示
+
+![image-20230122195226427](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230122195226427.png)
+
+
+
+## 表空间
+
+表空间是InnoDB存储引擎逻辑结构的最高层，所有数据都存放在表空间中。
+
+默认情况下InnoDB存储引擎有一个共享表空间ibdata1，所有数据都会存放在这个表空间内。如果启用了参数innodb_file_per_table，则每张表内的数据都可以存放在单独的表空间内，但是索引、插入缓冲Bitmap页，其他类的数据（如回滚信息，插入缓冲索引页、系统事务信息，二次写缓冲等）还是存放在原来的共享表空间。**即使启用了参数innodb_file_per_table，共享表空间还是会不断地增加其大小**。
+
+执行rollback时并不会取收缩表空间，但是会根据需求判断这些空间是否为可用空间，是的话这些可用空间将会被再次使用。
+
+
+
+## 段
+
+表空间由各个段组成的，常见的段有数据段、索引段、回滚段等。
+
+## 区
+
+区是由连续页组成的空间，在任何情况下每个区的大小都为1MB。
+
+为了保证区中页的连续性，InnoDB存储引擎一次从磁盘申请4～5个区。在默认情况下，InnoDB存储引擎页的大小为16KB，即一个区中一共有64个连续的页。
+
+
+
+## 页
+
+页是InnoDB磁盘管理的最小单位。在InnoDB存储引擎中，默认每个页的大小为16KB。
+
+InnoDB 1.2版本后可以通过参数innodb_page_size将页的大小设置为4K、8K、16K。
+
+InnoDB存储引擎常见的页类型：
+
+- 数据页（B-tree Node）
+- undo页（undo Log Page）
+- 系统页（System Page）
+- 事务数据页（Transaction system Page）
+- 插入缓冲位图页（Insert Buffer Bitmap）
+- 插入缓冲空闲列表页（Insert Buffer Free List）
+- 未压缩的二进制大对象页（Uncompressed BLOB Page）
+- 压缩的二进制大对象页（compressed BLOB Page）
+
+
+
+## 行
+
+InnoDB存储引擎数据按行存放，最多允许存放16KB/2-200行的记录，即7992行记录。
+
+
+
+## 行记录格式
+
+页中保存着表中一行行的数据。在InnoDB 1.0.x版本之前，InnoDB存储引擎提供了Compact和Redundant两种格式来存放行记录数据。**在MySQL 5.1版本中，默认设置为Compact行格式**。可以通过命令SHOW TABLE STATUS LIKE'table_name'来查看当前表使用的行格式，其中row_format属性表示当前所使用的行记录结构类型。
+
+
+
+### Compact行记录格式
+
+Compact行记录在MySQL5.0引入，设计目标是高效存储数据。存储方式如下图：
+
+![image-20230128094111701](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128094111701.png)
+
+Compact行记录格式**首部是一个非NULL变长字段长度列表，按照列的顺序逆序放置**。长度为：
+
+- 若列的长度小于255字节，用1字节表示；
+- 若大于255个字节，用2字节表示。
+
+变长字段的长度最大不可以超过2字节，这是因在MySQL数据库中VARCHAR类型的最大长度限制为65535。
+
+**变长字段之后的第二个部分是NULL标志位，该位指示了该行数据中是否有NULL值**，有则用1表示。该部分所占的字节应该为1字节。
+
+**接下来的部分是记录头信息（record header），固定占用5字节（40位）**，每位的含义如下图：
+
+![image-20230128094700034](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128094700034.png)
+
+**最后部分是实际存储每个列的数据**。NULL不占该部分任何空间，即NULL除了占有NULL标志位，实际存储不占有任何空间。每行数据**除了用户定义的列外，还有两个隐藏列，事务ID列和回滚指针列**，分别为6字节和7字节的大小。若InnoDB表没有定义主键，每行还会增加一个6字节的rowid列。
+
+
+
+### Redundant行记录格式
+
+Redundant是MySQL 5.0版本之前InnoDB的行记录存储方式，MySQL 5.0支持Redundant是为了兼容之前版本的页格式。Redundant行记录如图：
+
+![image-20230128095925159](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128095925159.png)
+
+
+
+**Redundant行记录格式的首部是一个字段长度偏移列表**，同样是按照列的顺序逆序放置的。若列的长度小于255字节，用1字节表示；若大于255字节，用2字节表示。
+
+**第二个部分为记录头信息（record header**），不同于Compact行记录格式，Redundant行记录格式的记录头占用6字节（48位），每位含义如图：
+
+![image-20230128100128381](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128100128381.png)
+
+**最后的部分为实际存储的每个列的数据**。
+
+对于VARCHAR类型的NULL值，Redundant行记录格式同样不占用任何存储空间，而CHAR类型的NULL值需要占用空间。
+
+
+
+### 行溢出数据
+
+行溢出指的是当页中只能存放下一条记录，InnoDB存储引擎会自动将行数据存放到溢出页。
+
+MySQL官方手册定义的VARCHAR类型支持最大65532**字节**，但实际能存放VARCHAR类型的最大长度为65532，因为还有别的开销。创建表时VARCHAR（N）中的N指的是**字符**的长度。这个长度是指所有VARCHAR列的长度总和，如果列的长度总和超出这个长度，依然无法创建。
+
+在一般情况下，InnoDB存储引擎的数据都是存放在页类型为B-tree node中。但是当发生行溢出时，数据存放在页类型为Uncompress BLOB页中。行溢出数据存放方式如下
+
+![image-20230128103213688](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128103213688.png)
+
+当发生行溢出时，数据页只保存前一部分字节数据，后面保存的是偏移量，指向行溢出页。
+
+
+
+### Compressed和Dynamic行记录格式
+
+InnoDB 1.0.x版本引入新的文件格式Barracuda文件格式。Barracuda文件格式下拥有两种新的行记录格式：Compressed和Dynamic。
+
+新的两种记录格式对于存放在BLOB中的数据采用了完全的行溢出的方式，如图
+
+![image-20230128103825800](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230128103825800.png)
+
+
+
+在数据页中只存放20个字节的指针，实际的数据都存放在Off Page中，而之前的Compact和Redundant两种格式会存放768个前缀字节。
+
+Compressed行记录格式的另一个功能就是，存储在其中的行数据会以zlib的算法进行压缩，因此对于BLOB、TEXT、VARCHAR这类大长度类型的数据能够进行非常有效的存储。
+
+
+
+
+
+## InnoDB数据页结构
+
+InnoDB数据页由7个部分组成，如图所示
+
+- File Header（文件头）
+- Page Header（页头）
+- Infimun和Supremum Records
+- User Records（用户记录，即行记录）
+- Free Space（空闲空间）
+- Page Directory（页目录）
+- File Trailer（文件结尾信息）
+
+![image-20230207112712282](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207112712282.png)
+
+
+
+其中File Header、Page Header、File Trailer的大小是固定的，分别为38、56、8字节。User Records、Free Space、Page Directory这些部分为实际的行记录存储空间，因此大小是动态的。
+
+
+
+### File Header
+
+File Header用来记录一些头信息，共占用38字节。组成部分如图：
+
+![image-20230207113148905](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207113148905.png)
+
+
+
+FIL_PAGE_TYPE是InnoDB存储引擎的类型，常见的类型如图
+
+![image-20230207113313552](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207113313552.png)
+
+
+
+### Page Header
+
+Page Header用来记录数据页的状态信息，由14部分组成，占用56字节，如图所示
+
+![image-20230207113703074](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207113703074.png)
+
+![image-20230207113635431](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207113635431.png)
+
+
+
+### Infimum和Supremum Record
+
+InnoDB存储引擎中，每个数据页中有两个虚拟的行记录，用来限定记录的边界。Infimum记录是比该页中任何主键值都要小的值，Supremum指比任何可能大的值还要大的值。这两个值在页创建时被建立，并且在任何情况下不会被删除。在Compact行格式和Redundant行格式下，两者占用的字节数各不相同。图4-7显示了Infimum和Supremum记录。
+
+![image-20230207115129723](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230207115129723.png)
+
+
+
+### User Record和Free Space
+
+User Record是实际存储行记录的内容。Free Space是空闲空间，也是个链表数据结构。一条记录被删除后，该空间会加入到空闲链表中。
+
+
+
+### Page Directory
+
+Page Directory（页目录）存放了记录的相对位置（页的相对位置，而不是偏移量），有时这些记录指针被称为Slots（槽）或者目录槽（Directory Slots）
+
+### File Trailer
+
+File Trailer只有一个FIL_PAGE_END_LSN部分，占用8字节。前4字节代表该页的checksum值，最后4字节和File Header中的FIL_PAGE_LSN相同。将这两个值与File Header中的FIL_PAGE_SPACE_OR_CHKSUM和FIL_PAGE_LSN值进行比较，看是否一致（checksum的比较需要通过InnoDB的checksum函数来进行比较，不是简单的等值比较），以此来保证页的完整性（not corrupted）。
+
+
+
+
+
+# 索引分类
+
+## 功能逻辑分类
+
+普通索引、唯一索引、主键索引、全文索引。
+
+
+
+## 作用字段个数分类
+
+单列索引和联合索引。
+
+
+
+## 物理实现方式分类
+
+### 聚簇索引
+
+特点：
+
+1. 使用记录主键值的大小进行记录和页的排序。
+   - **页内**的记录按照主键顺序排序成一个**单向链表**。
+   - 各个存放**用户记录的页**根据页中用户记录的主键大小排成一个**双向链表**。
+   - 存放**目录项记录的页**分为不同的层次，在同一层次中的页根据目录项的主键大小顺序排成一个**双向链表**。
+2. B+树的**叶子节点**存储的是完整的用户记录。即存储了所有列的值（包括隐藏列）
+
+优点：
+
+- **数据访问快**。因为索引和数据保存在同一个B+树中。
+- 对主键的排序查找和范围查找速度非常快。
+
+缺点：
+
+- **插入速度严重依赖于插入顺序**，按照主键的顺序插入是最快的方式。
+- **更新主键的代价高**，因为会导致被更新的行移动。
+
+### 非聚簇索引
+
+非聚簇索引在自己的B+树中只能查找到记录的主键值。要查找完整的用户记录的话，需要到聚簇索引中再查一遍，这个过程称为**回表**。
+
+
+
+# 索引语法
+
+## 创建索引
+
+MySQL支持多种方法在单个或多个列创建索引：在创建表的定义语句CREATE TABLE指定索引列，使用ALTER TABLE语句已存在表上创建索引，使用CREATE INDEX语句在已存在表上添加索引。
+
+
+
+### 创建表时创建索引
+
+主键默认添加主键索引。
+
+显示创建表时创建索引，语法格式如下：
+
+```sql
+CREATE TABLE table_name [col_name data_type]
+[UNIQUE | FULLTEXT | SPATIAL] [INDEX | KEY] [index_name] (col_name [length]) [ASC |
+DESC]
+```
+
+- UNIQUE 、 FULLTEXT 和 SPATIAL 为可选参数，分别表示唯一索引、全文索引和空间索引；
+- INDEX 与 KEY 为同义词，两者的作用相同，用来指定创建索引；
+- index_name 指定索引的名称，为可选参数，如果不指定，那么MySQL默认col_name为索引名；
+- col_name 为需要创建索引的字段列，该列必须从数据表中定义的多个列中选择；
+- length 为可选参数，表示索引的长度，只有字符串类型的字段才能指定索引长度；
+- ASC 或 DESC 指定升序或者降序的索引值存储。
+
+
+
+### 在已存在的表上创建索引
+
+1. 使用ALTER TABLE语句创建索引 ALTER TABLE语句创建索引的基本语法如下：
+
+   ```sql
+   ALTER TABLE table_name ADD [UNIQUE | FULLTEXT | SPATIAL] [INDEX | KEY]
+   [index_name] (col_name[length],...) [ASC | DESC]
+   ```
+
+   
+
+2. 使用CREATE INDEX创建索引 CREATE INDEX语句可以在已经存在的表上添加索引，在MySQL中，CREATE INDEX被映射到一个ALTER TABLE语句上，基本语法结构为：
+
+   ```sql
+   CREATE [UNIQUE | FULLTEXT | SPATIAL] INDEX index_name
+   ON table_name (col_name[length],...) [ASC | DESC]
+   ```
+
+   
+
+## 查看索引
+
+```sql
+SHOW INDEX FROM [TABLE]
+```
+
+
+
+## 删除索引
+
+1. 使用ALTER TABLE删除索引 ALTER TABLE删除索引的基本语法格式如下：
+
+   ```sql
+   ALTER TABLE table_name DROP INDEX index_name;
+   ```
+
+   
+
+2. 使用DROP INDEX语句删除索引 DROP INDEX删除索引的基本语法格式如下：
+
+   ```sql
+   DROP INDEX index_name ON table_name;
+   ```
+
+
+
+# 索引设计原则
+
+## 哪些情况适合创建索引
+
+### 1.字段的数值有唯一性的限制
+
+> 业务上具有唯一特性的字段，即使是组合字段，也必须建成唯一索引。（来源：Alibaba）
+> 说明：不要以为唯一索引影响了 insert 速度，这个速度损耗可以忽略，但提高查找速度是明显的。
+
+
+
+### 2.频繁作为WHERE查询条件的字段
+
+某个字段在SELECT语句的 WHERE 条件中经常被使用到，那么就需要给这个字段创建索引了。尤其是在数据量大的情况下，创建普通索引就可以大幅提升数据查询的效率。
+
+
+
+### 3.经常GROUP BU 和ORDER BY 的列
+
+索引就是让数据按照某种顺序进行存储或检索，因此当我们使用 GROUP BY 对数据进行分组查询，或者使用 ORDER BY 对数据进行排序的时候，就需要 **对分组或者排序的字段进行索引** 。如果待排序的列有多个，那么可以在这些列上建立 **组合索引** 。
+
+
+
+### 4.UPDATE、DELETE的WHERE条件列
+
+对数据按照某个条件进行查询后再进行 UPDATE 或 DELETE 的操作，如果对 WHERE 字段创建了索引，就能大幅提升效率。原理是因为我们需要先根据 WHERE 条件列检索出来这条记录，然后再对它进行更新或删除。**如果进行更新的时候，更新的字段是非索引字段，提升的效率会更明显，这是因为非索引字段更新不需要对索引进行维护**。
+
+
+
+### 5.DISTINCT字段需要创建索引
+
+索引会对数据按照某种顺序进行排序，所以在去重的时候也会快很多。
+
+
+
+### 6.多表JOIN连接时，对连接的字段和WHERE条件创建索引
+
+
+
+### 7.使用列的类型小的创建索引
+
+### 8.使用字符串前缀创建索引
+
+> 在 varchar 字段上建立索引时，必须指定索引长度，没必要对全字段建立索引，根据实际文本
+> 区分度决定索引长度。
+> 说明：索引的长度与区分度是一对矛盾体，一般对字符串类型数据，长度为 20 的索引，区分度会 高达
+> 90% 以上 ，可以使用 count(distinct left(列名, 索引长度))/count(*)的区分度来确定。
+
+
+
+### 9.区分度高(散列性高)的列适合作为索引
+
+
+
+### 10.使用最频繁的列放到联合索引的左侧
+
+这样也可以较少的建立一些索引。同时，由于"最左前缀原则"，可以增加联合索引的使用率。
+
+
+
+### 11.在多个字段都要创建索引的情况下，联合索引优于单值索引
+
+
+
+## 哪些情况不适合创建索引
+
+
+
+### 1.WHERE中使用不到的字段，不要设置索引
+
+
+
+### 2.数据量小的表最好不要使用索引
+
+
+
+### 3.有大量重复数据的列上不要建立索引
+
+
+
+### 4.避免对经常更新的表创建过多的索引
+
+
+
+### 5.不建议用无序的值作为索引
+
+例如身份证、UUID(在索引比较时需要转为ASCII，并且插入时可能造成页分裂)、MD5、HASH、无序长字
+符串等。
+
+
+
+### 6.删除不再使用或者很少使用的索引
+
+
+
+
+
+### 7.不要定义冗余或重复的索引
