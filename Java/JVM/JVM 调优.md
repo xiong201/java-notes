@@ -1,0 +1,446 @@
+**为什么要进行JVM调优**？
+
+调优的最终目的都是为了应用程序使用最小的硬件消耗来承载更大的吞吐量。
+
+jvm调优主要是针对垃圾收集器的收集性能优化，**减少GC的频率和Full GC的次数**，令运行在虚拟机上的应用能够使用更少的内存以及延迟获取**更大的吞吐量**和**减少暂停时间**。
+
+
+
+**什么时候进行JVM调优?**
+
+1. 系统吞吐量与响应性能不高或下降；
+2. Heap内存（老年代）持续上涨达到设置的最大内存值；
+3. Full GC 次数频繁；
+4. GC 停顿时间过长（超过 1 秒）；
+5. 应用出现OutOfMemory 等内存异常；
+6. 应用中有使用本地缓存且占用大量内存空间；
+
+
+
+**调优调什么？**
+
+内存分配+垃圾回收
+
+1. 合理使用堆内存
+2. GC高效回收占用的内存的垃圾对象
+3. GC高效释放掉内存空间
+
+
+
+## 调优原则
+
+- 优先原则：优先架构调优和代码调优，JVM优化是不得已的手段
+  - 大多数的Java应用不需要进行JVM优化
+- 观测性原则：发现问题解决问题，没有问题不找问题
+
+
+
+
+
+## 调优关键指标
+
+### 吞吐量
+
+重要指标之一，**吞吐量是衡量系统在单位时间里面完成的工作数量**。吞吐量需求通常忽略延迟或者响应时间。通常情况下，提升吞吐量需要以系统响应变慢和更多内存消耗作为代价。
+
+- TPS：每秒事务数
+- Throughput：吞吐量=运行用户代码时间/（运行用户代码时间+垃圾收集时间），虚拟机总共运行了 100 分钟，其中垃圾收集花掉 1 分钟，那吞吐量就是99%。
+
+
+
+### 延迟或响应时间
+
+**延迟或者响应时间是衡量应用从接收到一个任务到完成这个任务消耗的时间**。一个延迟或者响应时间的需求需要忽略吞吐量。通常来讲，提升应用的响应时间需要以更低吞吐量或提高应用的内存消耗。
+
+
+
+### 内存占用
+
+内存占用是衡量应用消耗的内存，这个内存占用是指应用在运行在某一个吞吐量、延迟以及可用性和易管理性指标下的内存消耗，内存占用是通常描述为应用运行的时候Java堆的大小或者总共需要消耗内存。
+
+
+
+
+
+# JVM调优主要步骤
+
+
+
+- 第一步：监控分析GC日志
+
+- 第二步：判断JVM问题：
+
+  - 如果各项参数设置合理，系统没有超时日志出现，GC频率不高，GC耗时不高，那么没有必要进行GC优化
+
+  - 如果GC时间超过1-3秒，或者频繁GC，则必须优化。
+
+- 第三步：确定调优目标
+
+- 第四步：调整参数
+  - 调优一般是从满足程序的内存使用需求开始，之后是时间延迟要求，最后才是吞吐量要求，要基于这个步骤来不断优化，每一个步骤都是进行下一步的基础，不可逆行之。
+
+- 第五步：对比调优前后差距
+
+- 第六步：重复： 1 、 2 、 3 、 4 、 5 步骤
+  - 找到最佳JVM参数设置
+
+- 第七步：应用JVM到应用服务器：
+  - 找到最合适的参数，将这些参数应用到所有服务器，并进行后续跟踪。
+
+# JVM调优实践
+
+
+
+## 分析GC日志
+
+### 初始参数设置
+
+Jvm调优典型参数设置;
+
+1. -Xms堆内存的最小值：
+
+   - 默认情况下，当堆中可用内存小于40%时，堆内存会开始增加，一直增加到-Xmx的大小。
+
+2. -Xmx堆内存的最大值：
+
+   默认值是总内存/64（且小于1G）
+
+   - 默认情况下，当堆中可用内存大于70%时，堆内存会开始减少，一直减小到-Xms的大小；
+
+3. -Xmn新生代内存的最大值：
+
+   - 1.包括Eden区和两个Survivor区的总和
+   - 2.配置写法如：-Xmn1024k，-Xmn1024m，-Xmn1g
+
+4. -Xss每个线程的栈内存：
+
+   - 默认1M，一般来说是不需要改。线程栈越小意味着可以创建的线程数越多
+
+整个堆的大小 = 年轻代大小 + 年老代大小，堆的大小不包含元空间大小，如果增大了年轻代，年老代相应就会减小，官方默认的配置为年老代大小/年轻代大小=2/1左右；
+
+建议在开发测试环境可以用Xms和Xmx分别设置最小值最大值，但是在线上生产环境，**Xms和Xmx设置的值必须一样，防止抖动**
+
+默认的配置是否存在性能瓶颈。如果想要确定JVM性能问题瓶颈，需要进一步分析**GC日志**
+
+1. **-XX:+PrintGCDetails** 开启GC日志创建更详细的GC日志 ，默认情况下，GC日志是关闭的
+
+2. -XX:+PrintGCTimeStamps，-XX:+PrintGCDateStamps
+
+   开启GC时间提示
+
+   - 开启时间便于我们更精确地判断几次GC操作之间的时两个参数的区别
+   - 时间戳是相对于 0 （依据JVM启动的时间）的值，而日期戳（date stamp）是实际的日期字符串
+   - 由于日期戳需要进行格式化，所以它的效率可能会受轻微的影响，不过这种操作并不频繁，它造成的影响也很难被我们感知。
+
+3. **-XX:+PrintHeapAtGC** 打印堆的GC日志
+
+4. **-Xloggc:./logs/gc.log** 指定GC日志路径
+
+这里，我们是在window下面进行测试，idea配置如下：
+
+![image-20230406084552942](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230406084552942.png)
+
+
+
+
+
+> -XX:+PrintGCDetails -XX:+PrintGCTimeStamps -XX:+PrintGCDateStamps -XX:+PrintHeapAtGC -Xloggc:E:/logs/gc-default.log
+>
+> 这样就会在e盘下logs文件夹下面，生成gc-default.log日志
+
+![image-20230406084633483](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230406084633483.png)
+
+
+
+### GC日志解读
+
+**Young GC 日志含义**
+
+```
+2022-08-05T13:45:23.336+0800: 4.866: [GC (Metadata GC Threshold) [PSYoungGen: 136353K->20975K(405504K)] 160049K->48437K(720384K), 0.0092260 secs] [Times: user=0.00 sys=0.02, real=0.02 secs] 
+
+```
+
+这里的内容，我们一个一个解析：
+
+```
+2022-08-05T13:45:23.336+0800: 本次GC发生时间
+4.866: 举例启动应用的时间
+[GC【表示GC的类型，youngGC】 (Metadata GC Threshold) 元空间超阈值
+[PSYoungGen: 136353K->20975K(405504K年轻代总空间)] 160049K->48437K(720384K)整堆), 0.0092260 secs本次垃圾回收耗时]
+[Times: user=0.00本次GC消耗CPU的时间 sys=0.02系统暂停时间, real=0.02 secs实际应用暂停时间]
+
+
+```
+
+**FullGC 日志含义**
+
+```
+2022-08-05T20:24:47.815+0800: 6.955: [Full GC (Metadata GC Threshold) [PSYoungGen: 701K->0K(72704K)] [ParOldGen: 38678K->35960K(175104K)] 39380K->35960K(247808K), [Metaspace: 56706K->56706K(1099776K)], 0.1921975 secs] [Times: user=1.03 sys=0.00, real=0.19 secs] 
+
+```
+
+这里的内容，我们也是一个一个解析：
+
+```
+2022-08-05T20:24:47.815+0800:
+6.955: 刚启动服务就Full GC【整堆回收！！】
+
+[Full GC (Metadata GC Threshold) Metaspace空间超限！
+[PSYoungGen: 701K->0K(72704K)] 年轻代没有回收空间
+[ParOldGen: 38678K->35960K(175104K)] 39380K->35960K(247808K), 老年代也没有到阈值，整堆更没有到阈值
+[Metaspace: 56706K->56706K(1099776K)], 0.1921975 secs]
+[Times: user=1.03本次GC消耗CPU的时间 sys=0.00系统暂停时间, real=0.19 secs实际应用暂停时间] 
+
+
+```
+
+
+
+### GC日志可视化分析
+
+分析GC日志，就必须让GC日志输出到一个文件中，然后使用GC日志分析工具（[gceasy.io/](https://link.juejin.cn?target=https%3A%2F%2Fgceasy.io%2F)) 进行分析
+
+![image-20230406085019343](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230406085019343.png)
+
+
+
+> 这里分析完之后，可以下载分析报告
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/2b293a5a6ca84a0aae0ec64761ef2b40tplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+##### **1) JVM内存占用情况：**
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/a24c12ee4f6643e7a60c95bdc34d5ac0tplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+| Generation【区域】               | Allocated【最大值】 | Peak【占用峰值】 |
+| -------------------------------- | ------------------- | ---------------- |
+| Young Generation【年轻代】       | 74.5 mb             | 74.47 mb         |
+| Old Generation【老年轻代】       | 171 mb              | 95.62 mb         |
+| Meta Space【元空间】             | 1.05 gb             | 55.38 mb         |
+| Young + Old + Meta space【整体】 | 1.3 gb              | 212.64 mb        |
+
+##### 2) 关键性能指标：
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/9dbf678711824ada8fdfb501f7fe9f9btplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+1 、**吞吐量**： 百分比越高表明GC开销越低。这个指标反映了JVM的吞吐量。
+
+*   **Throughput**：**97.043%**
+
+2 、**GC 延迟**：**Latency**
+
+*   Avg Pause GC Time： **7.80 ms** 平均GC暂停时间
+*   Max Pause GC Time： **190 ms** 最大GC暂停时间
+
+##### 3) GC 可视化交互聚合结果
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/d19031e350f34659b8aa5c7430c3c7f7tplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+由上图可以看到，发生了3次full gc
+
+存在问题：一开始就发生了 3 次full gc , 很明显不太正常；
+
+##### 4) GC 统计
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/2f1c011b51fd4fdf808437dc1a9e1dactplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+**GC Statistics**：GC统计
+
+由上图可以得到，发生gc的总次数，young gc，full gc的统计，gc 暂停时间统计。
+
+##### 5) GC原因：
+
+![image.png](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/af5507e153fb473a836ada80f8461a4ftplv-k3u1fbpfcp-zoom-in-crop-mark3024000.png)
+
+| 原因                  | 次数 | 平均时间 | 最大时间 | 总耗时 |
+| --------------------- | ---- | -------- | -------- | ------ |
+| Metadata GC Threshold | 6    | 43.3 ms  | 190 ms   | 260 ms |
+| Allocation Failure    | 53   | 3.77 ms  | 10.0 ms  | 200 ms |
+
+这里对这些原因解析一下：
+
+1.  **Metadata GC Threshold**： 元空间超阈值
+2.  **Allocation Failure** ：年轻代空间不足
+
+> 这里补充一个原因，本案例还没出现的
+
+3.  **Ergonomics**：译文是“人体工程学”，GC中的Ergonomics含义是负责自动调解gc暂停时间和吞吐量之间平衡从而产生的GC。目的是使得虚拟机性能更好的一种做法。
+
+* * *
+
+由此可见，通过可视化的工具，可以快速的帮我们分析GC的日志。我们得善于利用工具。
+
+因为gc的日志文件，内容太多，都是密密麻麻的数字，文本。看得实在是头疼。
+
+有了**gc easy**可视化工具，而且还是在线的，十分的方便。**GC日志分析是免费的**
+
+
+
+## 堆内存与元空间优化
+
+元空间默认初始大小为20.75MB，**调整元空间大小需要Full GC**。对于8G物理内存的机器来说，一般将这两个值都设置为256M（可根据时间情况进行调整）。
+
+元空间优化：**Metaspace** 太小，会频繁触发Full GC。增加**Metaspace**空间大小。参数-XX:MetaspaceSize=N，设置元空间大小为128MB。
+
+堆内存：参数-Xms和-Xmx。增大堆内存。增加年轻代和老年代的空间，减少GC
+
+
+
+## 堆内存内部优化：新生代和老年代比例
+
+年轻代和老年代大小默认比例： 1 : 2。默认比例大部分都是最合适的。
+
+使用-XX:NewRetio = 4 表示young和old所占比值为1:4。年轻代设置太小，young gc次数变多了，这也有点影响性能。
+
+> 避免新生代设置过小，当新生代设置过小时，会产生两种比较明显的现象，一是minor GC次数频繁，二是可能导致 minor GC对象直接进入老年代。当老年代内存不足时，会触发Full GC。
+>
+> 避免新生代设置过大，当新生代设置过大时，会带来两个问题：一是老年大变小，可能导致FullGC频繁执行；二是 minor GC 执行回收的时间大幅度增加。
+
+## 垃圾回收器优化
+
+吞吐量优化ps+po：
+
+- Perallel-Scavenge垃圾收集器：`-XX:+UsePerallelGC`
+
+- Perallel-Old垃圾收集器【po是ps的老年代并行收集版本】：`-XX：+UsePerallelOldGC`
+
+
+
+响应时间优先parnew+cms：
+
+- ParNew垃圾收集器【Serial的收集器的多线程版本】：`-XX:UseParNewGC`
+
+- CMS垃圾收集器： 并发 收集器(非独占式)`-XX:ConcMarkSweepGC`【并发的标记清楚算法的GC垃圾收集器】
+
+
+
+### G1垃圾收集器（重点）
+
+G1中提供了三种模式垃圾回收模式， **Young GC、Mixed GC 和 Full GC** ，在不同的条件下被触发。
+
+G1的使用步骤：
+
+- 配置开启G1
+- 设置堆的最大内存
+- 设置GC最大暂停时间：设置100-300之间是比较合理：
+  - 如果设置的GC的暂停时间比较小，系统吞吐量会降低
+  - 默认的值是200,
+  - G1设计的目标：控制用户线程执行时间90%，GC占比时间10%
+
+
+
+#### G1垃圾收集器的工作原理
+
+G1垃圾收集器相对比其他收集器而言，最大的区别在于它取消了 **年轻代、老年代的物理划分，** 取而代之的是将堆划分为若干个区域（Region），这些区域中包含了有逻辑上的年轻代、老年代区域。
+
+这样做的好处就是，我们再也不用单独的空间对每个代进行设置了，不用担心每个代内存是否足够。
+
+在G1划分的区域中，年轻代的垃圾收集依然采用暂停所有应用线程的方式，将存活对象拷贝到老年代或者Survivor空间，G1收集器通过将对象从一个区域复制到另外一个区域，完成了清理工作。
+
+这就意味着，在正常的处理过程中，G1完成了堆的压缩（至少是部分堆的压缩），这样也就不会有cms内存碎片问题的存在了。
+
+
+
+Young GC主要是对Eden区进行GC，它在Eden空间耗尽时会被触发。
+
+Mixed GC：回收年轻代内存，同时也回收部分老年代的内存
+
+**MixedGC什么时候触发？**
+
+`-XX:InitiatingHeapOccupancyPercent=n` ，设置触发标记周期的 Java 堆占用率阈值。默认占用率是整个 Java 堆的 45%。
+
+MixedGC主要分为两步：
+
+1. 全局并发标记
+2. 拷贝存活对象
+
+
+
+#### G1收集器相关参数
+
+```
+# 使用 G1 垃圾收集器
+-XX:+UseG1GC
+
+# 设置期望达到的最大GC停顿时间指标（JVM会尽力实现，但不保证达到），默认值是 200 毫秒。
+-XX:MaxGCPauseMillis=
+
+# 设置的 G1 区域的大小。值是 2 的幂，范围是 1 MB 到 32 MB 之间。目标是根据最小的 Java 堆大小划分出约 2048 个区域。
+# 默认是堆内存的1/2000。
+-XX:G1HeapRegionSize=n
+
+# 设置 STW 工作线程数的值。将 n 的值设置为逻辑处理器的数量。n 的值与逻辑处理器的数量相同，最多为 8。
+-XX:ParallelGCThreads=n
+
+# 设置并行标记的线程数。将 n 设置为并行垃圾回收线程数 (ParallelGCThreads)的 1/4 左右。
+-XX:ConcGCThreads=n
+
+# 设置触发标记周期的 Java 堆占用率阈值。默认占用率是整个 Java 堆的 45%。
+-XX:InitiatingHeapOccupancyPercent=n
+```
+
+
+
+
+
+# JVM调优案例
+
+
+
+## 调优案例：metaspace导致频繁FGC问题
+
+
+
+![image-20230405103943481](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230405103943481.png)
+
+
+
+
+
+## 调优案例：YGG和OLD GC频繁
+
+![image-20230405105047198](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/image-20230405105047198.png)
+
+
+
+
+
+## 调优案例：OLD GC耗时较长影响业务
+
+原因：Remake阶段时间较长
+
+优化：-XX:+CMSScavengeBeforeRemark
+
+
+
+## 调优案例：YGC耗时增加
+
+原因：jackson进行反序列化时会将key进行String#intern，导致扫描时，GCRoot变大
+
+解决：禁用jackson的String#intern
+
+
+
+## 调优案例：YCG次数增加
+
+原因：-XX：MaxGCPauseMillis参数时间设置过小，导致JVM降低年轻代region
+
+解决：
+
+1. 调大-XX：MaxGCPauseMillis值
+2. 将年轻代region大小设置为固定值
+
+
+
+
+
+
+
+
+
+
+
+
+
+调优案例：
