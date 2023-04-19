@@ -11,7 +11,7 @@ public class ArrayList<E> extends AbstractList<E>
 
 - **RandomAccess**：RandomAccess接口是一个标记接口，用以标记实现的List集合具备**快速随机访问**的能力。当一个List拥有快速随机访问功能时，**其遍历方法采用for循环最快速**。而没有快速随机访问功能的List，遍历的时候采用Iterator迭代器最快速。
 - Cloneable：支持克隆。
-- **Serializable**：支持**序列化**。transient 标记的字段不会被序列化。
+- **Serializable**：支持**序列化**。保存数据的数组被transient 标记的字段不会被序列化，所以肯定自己实现了系列化（writeObject和readObject方法）
 
 
 
@@ -111,5 +111,4 @@ private static int hugeCapacity(int minCapacity) {
             MAX_ARRAY_SIZE;
     }
 ```
-
 
