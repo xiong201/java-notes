@@ -319,6 +319,16 @@ stringList.stream().sorted().forEach(s -> System.out.println(s));
 
 
 
+### groupingBy（分组）
+
+根据菜单类型进行分组
+
+```java
+menu.stream().collect(Collectors.groupingBy(Menu::getMenuType, Collectors.toList()));
+```
+
+
+
 ### Map(映射)
 
 map是个中间操作，会将元素根据指定的 Function 接口依次将元素转成另外的对象。 返回的Stream类型是根据map传递进去的函数的返回值决定的。
