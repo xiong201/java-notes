@@ -317,6 +317,23 @@ sorted（排序 ）是个中间操作，如果没有指定自定义Comparator的
 stringList.stream().sorted().forEach(s -> System.out.println(s));
 ```
 
+多字段排序：
+
+```java
+//对象集合以类属性一降序 属性二升序
+list.stream().sorted(Comparator.comparing(类::属性一,Comparator.reverseOrder()).thenComparing(类::属性二));
+
+```
+
+区分：
+
+```java
+//方式一：先以属性一升序，再属性一降序排序
+Comparator.comparing(类::属性一).reversed();
+//方式二：直接将属性一降序排序
+Comparator.comparing(类::属性一,Comparator.reverseOrder());
+```
+
 
 
 ### groupingBy（分组）
