@@ -336,16 +336,6 @@ Comparator.comparing(类::属性一,Comparator.reverseOrder());
 
 
 
-### groupingBy（分组）
-
-根据菜单类型进行分组
-
-```java
-menu.stream().collect(Collectors.groupingBy(Menu::getMenuType, Collectors.toList()));
-```
-
-
-
 ### Map(映射)
 
 map是个中间操作，会将元素根据指定的 Function 接口依次将元素转成另外的对象。 返回的Stream类型是根据map传递进去的函数的返回值决定的。
@@ -355,6 +345,19 @@ stringList.stream().map(String::toUpperCase).forEach(item -> System.out.println(
 ```
 
   
+
+给MenuInfo的字段赋值。
+
+```java
+List<MenuInfo> menuInfoList = menuInfoList.stream().map(e -> {
+            e.setMenuName(e.getMeunCode());
+            return e;
+        }).collect(Collectors.toList());
+```
+
+
+
+
 
 ### Match(匹配)
 
@@ -394,6 +397,34 @@ sumValue = Stream.of(1, 2, 3, 4).reduce(Integer::sum).get();
 reduce = Stream.of("a", "B", "c", "D", "e", "F").filter(s -> s.compareTo("Z") > 0).reduce((s1, s2) -> s1.concat(s2)); //ace
 reduce.ifPresent(System.out::println);
 ```
+
+
+
+### 最终流——collect方法
+
+
+
+**groupingBy（分组）**：
+
+根据菜单类型进行分组
+
+```java
+menu.stream().collect(Collectors.groupingBy(Menu::getMenuType, Collectors.toList()));
+```
+
+
+
+**List转Map**：
+
+```java
+Map<String, String> menuMap = menu.stream().collect(Collectors.toMap(Menu::getMenuType, Menu.getMwnuName()));
+```
+
+
+
+
+
+
 
 ## Parallel Streams(并行流)
 
