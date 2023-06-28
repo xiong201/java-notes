@@ -1,5 +1,3 @@
-# Java8新特性
-
 ## 接口的默认方法
 
 Java8能够通过`default`关键字给接口添加默认方法。也称为虚拟扩展方法。
@@ -21,7 +19,35 @@ public interface Formula {
 
 ## Lambda表达式
 
-使用Lambda必须具有接口，并且接口中的抽象方法只有一个。
+Lambda 表达式可以简洁地表示一个行为或者传递代码。Lambda 表达式可以看成匿名函数，和匿名类一样，它也能作为参数传递给一个方法。
+
+Lambda 表达式有三个部分：
+
+- **参数列表**——函数式接口的唯一抽象方法的参数
+- **箭头**——箭头->把参数列表与 Lambda 主体分隔开。
+- **Lambda 主体**——函数式接口唯一抽象方法的方法体
+
+![image-20230529161947617](https://notes-img2022.oss-cn-shenzhen.aliyuncs.com/img/202306031713951.png)
+
+Lambda 的基本语法：
+
+- **表达式-风格**
+
+  ```java
+  (parameters) -> expression
+  ```
+
+- **块-风格**
+
+  ```java
+  (parameters) -> { statements; }
+  ```
+
+
+
+**使用Lambda必须具有接口，并且接口中的抽象方法只有一个**。
+
+
 
 Java8之前排序字符串
 
@@ -51,6 +77,8 @@ Java8使用Lambda表达式排序字符串
 
 
 
+
+
 ### 表达式作用域
 
 #### 访问局部变量
@@ -59,9 +87,11 @@ lambda可以引用外部局部变量，但是引**用的变量不能再修改**�
 
 ```java
 int num = 1;
-Coverter<Integer, String> stringCoverter = (form) -> String.valueOf(form + num);
-//lambda表达式引用的变量不能再修改（具有隐式final含义），但是引用的变量可以不声明final
-//        num = 3;
+Arrays.asList(1, 2, 3).sort((a, b) -> {
+    //lambda表达式引用的变量不能再修改（具有隐式final含义），但是引用的变量可以不声明final
+    num = num + 2;  //Variable used in lambda expression should be final or effectively final 
+    return a > b ? a : b;
+});
         
 ```
 
@@ -87,11 +117,7 @@ public class LambdaScope {
 
 #### 访问接口默认方法
 
-lambda表达式无法访问接口默认方法。下面的代码无法编译。
-
-```java
-Formula formula = (a) -> sqrt(22);
-```
+lambda表达式无法访问接口默认方法。
 
 
 
@@ -263,7 +289,7 @@ System.out.println(person);
 
 ## Optional
 
- Optional 是用来防止NullPointerException 的漂亮工具。 Optional 是一个简单的容器，其值可能是null或者不是null。在Java8应该返回Optional 而不是null。
+Optional 是用来防止NullPointerException 的漂亮工具。 Optional 是一个简单的容器，其值可能是null或者不是null。在Java8应该返回Optional 而不是null。
 
 ```java
 //为非空的值创建一个Optional
