@@ -36,6 +36,101 @@ public boolean isEmpty() {
 
 
 
+# 集合转Map
+
+《阿里巴巴 Java 开发手册》的描述如下：
+
+> **在使用 `java.util.stream.Collectors` 类的 `toMap()` 方法转为 `Map` 集合时，一定要注意当 value 为 null 时会抛 NPE 异常。**
+
+```java
+class Person {
+    private String name;
+    private String phoneNumber;
+     // getters and setters
+}
+
+List<Person> bookList = new ArrayList<>();
+bookList.add(new Person("jack","18163138123"));
+bookList.add(new Person("martin",null));
+// 空指针异常
+bookList.stream().collect(Collectors.toMap(Person::getName, Person::getPhoneNumber));
+
+```
+
+# 集合遍历
+
+《阿里巴巴 Java 开发手册》的描述如下：
+
+> **不要在 foreach 循环里进行元素的 `remove/add` 操作。remove 元素请使用 `Iterator` 方式，如果并发操作，需要对 `Iterator` 对象加锁。**
+
+foreach 语法糖底层其实还是依赖 `Iterator` 。不过， `remove/add` 操作直接调用的是集合自己的方法，而不是 `Iterator` 的 `remove/add`方法。
+
+这就导致 `Iterator` 莫名其妙地发现自己有元素被 `remove/add` ，然后，它就会抛出一个 `ConcurrentModificationException` 来提示用户发生了并发修改异常。这就是单线程状态下产生的 **fail-fast 机制**。
+
+> **fail-fast 机制** ：多个线程对 fail-fast 集合进行修改的时候，可能会抛出`ConcurrentModificationException`。 即使是单线程下也有可能会出现这种情况
+
+
+
+# 集合去重
+
+《阿里巴巴 Java 开发手册》的描述如下：
+
+> **可以利用 `Set` 元素唯一的特性，可以快速对一个集合进行去重操作，避免使用 `List` 的 `contains()` 进行遍历去重或者判断包含操作。**
+
+这里以 `HashSet` 和 `ArrayList` 为例说明。
+
+```java
+// Set 去重代码示例
+public static <T> Set<T> removeDuplicateBySet(List<T> data) {
+
+    if (CollectionUtils.isEmpty(data)) {
+        return new HashSet<>();
+    }
+    return new HashSet<>(data);
+}
+
+// List 去重代码示例
+public static <T> List<T> removeDuplicateByList(List<T> data) {
+
+    if (CollectionUtils.isEmpty(data)) {
+        return new ArrayList<>();
+
+    }
+    List<T> result = new ArrayList<>(data.size());
+    for (T current : data) {
+        if (!result.contains(current)) {
+            result.add(current);
+        }
+    }
+    return result;
+}
+
+
+```
+
+
+
+# 集合转数组
+
+《阿里巴巴 Java 开发手册》的描述如下：
+
+> **使用集合转数组的方法，必须使用集合的 `toArray(T[] array)`，传入的是类型完全一致、长度为 0 的空数组。**
+
+`toArray(T[] array)` 方法的参数是一个泛型数组，如果 `toArray` 方法中没有传递任何参数的话返回的是 `Object`类 型数组。
+
+```java
+String [] s= new String[]{
+    "dog", "lazy", "a", "over", "jumps", "fox", "brown", "quick", "A"
+};
+List<String> list = Arrays.asList(s);
+Collections.reverse(list);
+//没有指定类型的话会报错
+s=list.toArray(new String[0]);
+
+```
+
+
+
 # 数组转集合
 
 《阿里巴巴 Java 开发手册》的描述如下：
@@ -131,43 +226,33 @@ List myList = Arrays.stream(myArray2).boxed().collect(Collectors.toList());
 
 
 
+# 返回空集合
+
+```java
+//空List
+Collections.emptyList();
+//空Set
+Collections.emptySet();
+//空Map
+Collections.emptyMap();
+```
+
+当需要一个空集合时，直接使用上面的三个方法返回空集合。
+
+注意：**这些空集合不能调用add方法，否则会直接抛出异常**。
+
+使用这些空集合的好处：
+
+1. **避免内存浪费**。使用`new ArrayList()`等方法会有初始大小，多少会占用一定内存空间。
+2. **编码方便，避免`NULL`值判断**。如果方法返回类型是List，返回空集合，避免方法调用者进行NULL判断。
 
 
-# java.util包使用
 
-
-
-
-
-
-
-## Collections
-
-Collections.emptyList()：当if或者else逻辑需要返回空List时使用
-
-
-
-## ArrayList
+# 集合复用
 
 ArrayList使用clear()方法可以直接复用无需再次扩容。
 
-
-
-
-
-## HashMap
-
-
-
-可以通过HashMap的put方法的返回值，进行一个是否有数值覆盖的判断。
-
-有些业务场景需要保证key为唯一的。这时我们使用put方法添加数据，如果有返回值的话，就说明业务的key不唯一，可以根据业务需求，直接抛出异常。
-
-如果需要原先的旧值，put返回就是旧值，可以直接set回去，数据不会丢失。
-
-
-
-
-
 HashMap如果需要批处理大量数据，可以分批处理，处理完一个一批后，使用clear()方法清除数据，再装载下一批数据进行处理，这样只要扩容一次。
+
+
 
