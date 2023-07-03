@@ -487,3 +487,9 @@ MySQL支持两种排序方式，分别`FileSort`和`Index`排序
 ## GROUP BY优化
 
 group by 先排序再分组，遵照索引建的最佳左前缀法则
+
+
+
+## 函数优化
+
+max/min函数：使用`order by 列名 limit 1`进行优化
