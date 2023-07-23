@@ -23,9 +23,10 @@ todo:
 - 系统设计
   - 网关
   - 安全
-    - 认证
+    - 认证授权
       - Oauth2
-    - 授权
+      - Shiro
+        - [Shiro教程之一 概述 - 与f - 博客园](https://www.cnblogs.com/fps2tao/p/13570008.html)
 - 高可用
   - 超时&重试
   - 降级&熔断
