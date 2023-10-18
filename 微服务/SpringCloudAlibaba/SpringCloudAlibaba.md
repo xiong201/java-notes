@@ -1,0 +1,161 @@
+
+
+
+
+
+
+
+
+[Spring Cloud Alibaba](https://github.com/alibaba/spring-cloud-alibaba/wiki) 致力于提供微服务开发的一站式解决方案。
+
+
+
+
+
+## Nacos
+
+[Nacos](https://nacos.io/zh-cn/index.html) 一个更易于构建云原生应用的**动态服务发现、配置管理和服务管理**平台。
+
+Nacos 支持CP和AP，默认使用AP
+
+### 注册中心
+
+心跳机制：解决服务多负载服务宕机的问题。
+
+Nacos Discover：服务注册与发现，定时拉取服务列表。
+
+客户端负载均衡：Nacos默认使用Ribbon做负载均衡。
+
+修改Ribbon的负载均衡策略。自定义Ribbon负载均衡策略。
+
+使用LoadBalancer替换Ribbon做负载均衡。
+
+
+
+### 配置中心
+
+特性：
+
+- 维护性：集中式配置管理
+- 时效性：更新配置信息
+- 安全性：权限管理
+
+概念：
+
+- 命名空间
+- 组
+- Data Id
+
+
+
+服务读取Nacos配置中心配置信息：
+
+- 默认配置文件（支持多profile配置）
+- 自定义配置文件（extension-configs、shared-configs）
+
+
+
+配置文件优先级：profile>默认配置文件>extension-configs（下标越大优先级越大）>shared-configs（下标越大优先级越大）
+
+@Value需加@RefreshScope才能自动刷新。
+
+
+
+
+
+
+
+### 集群
+
+
+
+Nacos集群搭建：
+
+1. Nacos修改数据源为MySQL，配置为集群模式
+2. 修改Nginx配置文件做负载均衡。
+
+
+
+
+
+## Sentinel
+
+服务雪崩：服务提供者不可用导致服务调用者不可用，并将不可用逐渐放大的过程。
+
+解决方法——添加容错机制：
+
+- 超时机制
+- 服务限流
+- 服务降级
+- 服务熔断
+
+
+
+[Sentinel](https://sentinelguard.io/zh-cn/index.html) 是面向分布式、多语言异构化服务架构的流量治理组件。
+
+Sentinel 分为核心库和控制台两个部分。
+
+核心概念：
+
+- **资源**：可以是任何东西，服务，服务里的方法，甚至是一段代码。
+- **规则**：**流量控制规则**、**熔断降级规则**、**系统保护规则**、**来源访问控制规则** 和 **热点参数规则**。默认保存到内存中，可以配置持久化（比如整合Nacos配置中心）
+
+使用 Sentinel 来进行资源保护，主要分为几个步骤:
+
+1. 定义资源
+2. 定义规则
+3. 检验规则是否生效
+
+
+
+Sentinel 整合 OpenFeign。
+
+
+
+## Seata
+
+分布式事务理论基础：
+
+- 2PC
+- 3PC
+
+
+
+2PC 事务实现：
+
+- AT模式（无侵入性）：
+  - 解析SQL、BeforeImage、执行SQL、AfterImage、行锁
+  - 成功（删除行锁）
+- TCC
+- SAGA
+- XA
+
+
+
+[Seata](https://seata.io/zh-cn/index.html)是一款开源的分布式事务解决方案。
+
+支持AT、TCC、SAGA、XA事务模式。**推荐使用AT模式**。
+
+
+
+Seata 角色：
+
+- 事务协调者
+- 事务管理器
+- 资源管理器
+
+
+
+Seata环境搭建：
+
+- Seata 服务端高可用部署：使用DB数据源+Nacos（注册中心+配置中心）
+- Seata 客户端搭建
+
+
+
+@GlobalTransacational注解使用。
+
+
+
+Seata AT模式的原理。
+
