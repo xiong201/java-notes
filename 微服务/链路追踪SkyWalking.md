@@ -1,0 +1,29 @@
+# 链路追踪SkyWalking
+
+无侵入式（使用Java指针）
+
+SkyWalking 环境搭建：
+
+- 服务端和UI搭建
+- SkyWalking接入微服务（设置微服务JVM参数）
+
+
+
+SkyWalking 数据持久化，默认H2数据库存储，可修改成MySQL、es等。
+
+SkyWalking自定义链路追踪：
+
+- @Trace注解
+- @Tags、@Tag
+
+
+
+SkyWalking 性能剖析
+
+SkyWalking告警功能：
+
+- 告警规则
+- 网络钩子
+
+SkyWaking高可用集群配置
+
