@@ -1,5 +1,5 @@
 const baiduCode = require('./config/baiduCode.js'); // 百度统计hm码
-const htmlModules = require('./config/htmlModules.js');
+// const htmlModules = require('./config/htmlModules.js');
 
 
 module.exports = {
@@ -8,8 +8,8 @@ module.exports = {
   theme: 'vdoing', // 使用依赖包主题
   // theme: require.resolve('../../vdoing'), // 使用本地主题 (先将vdoing主题文件下载到本地：https://github.com/xugaoyi/vuepress-theme-vdoing)
 
-  title: "vuepress-theme-vdoing",
-  description: '一个基于VuePress的 知识管理&博客 主题',
+  title: "xiong201的个人知识库",
+  description: '知识管理',
   // base: '/', // 默认'/'。如果你想将你的网站部署到如 https://foo.github.io/bar/，那么 base 应该被设置成 "/bar/",（否则页面将失去样式等文件）
   head: [ // 注入到页面<head> 中的标签，格式[tagName, { attrName: attrValue }, innerHTML?]
     ['link', { rel: 'icon', href: '/img/favicon.ico' }], //favicons，资源放在public文件夹
@@ -22,7 +22,7 @@ module.exports = {
     nav: [
       { text: '首页', link: '/' },
       {
-        text: '数据结构与算法', link: '/pages/0e35d1/', items: [
+        text: '数据结构与算法',  items: [
           {
             text: '数据结构', items: [
               { text: '线性数据结构——数组、链表、栈、队列', link: '/pages/0e35d1/' },
@@ -35,7 +35,7 @@ module.exports = {
         ]
       },
       {
-        text: '数据库', link: '/pages/a2f161/', items: [
+        text: '数据库',  items: [
           {text:'数据库基础与SQL',link:'/pages/67462f/'},
           {
             text: 'MySQL', items: [
@@ -49,7 +49,7 @@ module.exports = {
         ]
       },
       {
-        text: 'Java', link: '/pages/a2f161/', items: [
+        text: 'Java', items: [
           {
             text: 'Java 基础', items: [
               { text: 'BigDecimal 详解', link: '/pages/f7214d/' },
@@ -88,7 +88,7 @@ module.exports = {
         ]
       }, 
       {
-        text: '常用框架', link: '/pages/a2f161/', items: [
+        text: '常用框架', items: [
           {
             text: 'Spring', items: [
               { text: 'Spring Bean', link: '/pages/47235b/' },
@@ -99,7 +99,7 @@ module.exports = {
         ]
       },
       {
-        text: '分布式', link: '/pages/a2f161/', items: [
+        text: '分布式', items: [
           {
             text: '分布式锁', items: [
               { text: '分布式锁介绍', link: '/pages/4418d1/' },
@@ -115,7 +115,7 @@ module.exports = {
         ]
       },
       {
-        text: '微服务', link: '/pages/d2a1d0/', items: [
+        text: '微服务',  items: [
           {
             text: 'SpringCloud', items: [
               { text: 'SpringCloud', link: '/pages/d2a1d0/' }
@@ -130,14 +130,14 @@ module.exports = {
         ]
       },
       {
-        text: '设计模式', link: '/pages/d2a1d0/', items: [
+        text: '设计模式', items: [
           {text:'设计模式简介',link:'/pages/56a50e/'},
           {text:'责任链模式',link:'/pages/62b3c2/'},
           {text:'模版方法模式',link:'/pages/a2e658/'}
         ]
       },
       {
-        text: '系统设计', link: '/pages/d2a1d0/', items: [
+        text: '系统设计', items: [
           {
             text: '定时任务', items: [
               { text: 'Java 定时任务大全', link: '/pages/ae063e/' },
@@ -147,26 +147,26 @@ module.exports = {
         ]
       },
       {
-        text: '代码质量', link: '/pages/d2a1d0/', items: [
+        text: '代码质量',  items: [
           {text:'Java 命名规范',link:'/pages/d83c14/'},
           {text:'代码优化',link:'/pages/6281f2/'}
         ]
       },
       {
-        text: 'Web服务器', link: '/pages/d2a1d0/', items: [
+        text: 'Web服务器',  items: [
           {text:'Nginx',link:'/pages/dd97c6/'}
         ]
       },
       {
-        text: 'Linux', link: '/pages/d2a1d0/', items: [
+        text: 'Linux',  items: [
           {text:'Linux',link:'/pages/ee514b/'},
           {text:'Linux 常用命令',link:'/pages/74b53c/'}
         ]
       }
     ],
     sidebarDepth: 2, // 侧边栏显示深度，默认1，最大2（显示到h3标题）
-    logo: '/img/logo.png', // 导航栏logo
-    repo: 'xugaoyi/vuepress-theme-vdoing', // 导航栏右侧生成Github链接
+    // logo: '/img/logo.png', // 导航栏logo
+    repo: 'https://github.com/xiong201', // 导航栏右侧生成Github链接
     searchMaxSuggestions: 10, // 搜索结果显示最大数
     lastUpdated: '上次更新', // 更新的时间，及前缀文字   string | boolean (取值为git提交时间)
 
@@ -175,7 +175,7 @@ module.exports = {
     // editLinkText: '编辑',
 
     // 以下配置是Vdoing主题改动的和新增的配置
-    sidebar: { mode: 'structuring', collapsable: false }, // 侧边栏  'structuring' | { mode: 'structuring', collapsable: Boolean} | 'auto' | 自定义    温馨提示：目录页数据依赖于结构化的侧边栏数据，如果你不设置为'structuring',将无法使用目录页
+    sidebar: { mode: 'structuring', collapsable: true }, // 侧边栏  'structuring' | { mode: 'structuring', collapsable: Boolean} | 'auto' | 自定义    温馨提示：目录页数据依赖于结构化的侧边栏数据，如果你不设置为'structuring',将无法使用目录页
 
     // sidebarOpen: false, // 初始状态是否打开侧边栏，默认true
     updateBar: { // 最近更新栏
@@ -198,33 +198,33 @@ module.exports = {
 
     author: { // 文章默认的作者信息，可在md文件中单独配置此信息 String | {name: String, href: String}
       name: 'Xiong', // 必需
-      href: 'https://github.com/xugaoyi' // 可选的
+      // href: 'https://github.com/xugaoyi' // 可选的
     },
     social: { // 社交图标，显示于博主信息栏和页脚栏
       // iconfontCssFile: '//at.alicdn.com/t/font_1678482_u4nrnp8xp6g.css', // 可选，阿里图标库在线css文件地址，对于主题没有的图标可自由添加
-      icons: [
-        {
-          iconClass: 'icon-youjian',
-          title: '发邮件',
-          link: 'mailto:894072666@qq.com'
-        },
-        {
-          iconClass: 'icon-github',
-          title: 'GitHub',
-          link: 'https://github.com/xugaoyi'
-        },
-        {
-          iconClass: 'icon-erji',
-          title: '听音乐',
-          link: 'https://music.163.com/#/playlist?id=755597173'
-        }
-      ]
+      // icons: [
+      //   {
+      //     iconClass: 'icon-youjian',
+      //     title: '发邮件',
+      //     link: 'mailto:894072666@qq.com'
+      //   },
+      //   {
+      //     iconClass: 'icon-github',
+      //     title: 'GitHub',
+      //     link: 'https://github.com/xugaoyi'
+      //   },
+      //   {
+      //     iconClass: 'icon-erji',
+      //     title: '听音乐',
+      //     link: 'https://music.163.com/#/playlist?id=755597173'
+      //   }
+      // ]
     },
     footer: { // 页脚信息
-      createYear: 2019, // 博客创建年份
-      copyrightInfo: 'Evan Xu | MIT License', // 博客版权信息，支持a标签
+      createYear: 2023, // 博客创建年份
+      copyrightInfo: 'xiong201 | MIT License', // 博客版权信息，支持a标签
     },
-    htmlModules,
+    // htmlModules,
   },
 
   // 插件
@@ -305,6 +305,6 @@ module.exports = {
   // 监听文件变化并重新构建
   extraWatchFiles: [
     '.vuepress/config.js',
-    '.vuepress/config/htmlModules.js',
+    // '.vuepress/config/htmlModules.js',
   ]
 }
