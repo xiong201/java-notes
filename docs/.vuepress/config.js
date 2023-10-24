@@ -5,8 +5,8 @@ const baiduCode = require('./config/baiduCode.js'); // 百度统计hm码
 module.exports = {
   base:'/java-notes/',
 
-  // theme: 'vdoing', // 使用依赖包主题
-  theme: require.resolve('../../vdoing'), // 使用本地主题 (先将vdoing主题文件下载到本地：https://github.com/xugaoyi/vuepress-theme-vdoing)
+  theme: 'vdoing', // 使用依赖包主题
+  // theme: require.resolve('../../vdoing'), // 使用本地主题 (先将vdoing主题文件下载到本地：https://github.com/xugaoyi/vuepress-theme-vdoing)
 
   // title: "xiong201的个人知识库",
   description: '知识管理',
@@ -158,7 +158,7 @@ module.exports = {
 
   markdown: {
     // lineNumbers: true,
-    extractHeaders: ['h2', 'h3', 'h4', 'h5', 'h6'], // 提取标题到侧边栏的级别，默认['h2', 'h3']
+    extractHeaders: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'], // 提取标题到侧边栏的级别，默认['h2', 'h3']
   },
 
   // 监听文件变化并重新构建
