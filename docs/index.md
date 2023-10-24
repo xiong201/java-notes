@@ -1,6 +1,6 @@
 ---
 home: true
-heroImage: /img/logo.png
+# heroImage: /img/logo.png
 heroText: xiong201的个人知识库
 tagline: 🚀知识：学习、吸收、输出、使用
 actionText: Java 知识体系 →

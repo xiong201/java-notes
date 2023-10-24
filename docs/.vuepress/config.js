@@ -5,10 +5,10 @@ const baiduCode = require('./config/baiduCode.js'); // 百度统计hm码
 module.exports = {
   base:'/java-notes/',
 
-  theme: 'vdoing', // 使用依赖包主题
-  // theme: require.resolve('../../vdoing'), // 使用本地主题 (先将vdoing主题文件下载到本地：https://github.com/xugaoyi/vuepress-theme-vdoing)
+  // theme: 'vdoing', // 使用依赖包主题
+  theme: require.resolve('../../vdoing'), // 使用本地主题 (先将vdoing主题文件下载到本地：https://github.com/xugaoyi/vuepress-theme-vdoing)
 
-  title: "xiong201的个人知识库",
+  // title: "xiong201的个人知识库",
   description: '知识管理',
   // base: '/', // 默认'/'。如果你想将你的网站部署到如 https://foo.github.io/bar/，那么 base 应该被设置成 "/bar/",（否则页面将失去样式等文件）
   head: [ // 注入到页面<head> 中的标签，格式[tagName, { attrName: attrValue }, innerHTML?]
@@ -194,7 +194,7 @@ module.exports = {
     //   '图标地址1',
     //   '图标地址2'
     // ],
-
+    pageButton: false,
     pageStyle: 'line', // 页面风格，可选值：'card'卡片 | 'line' 线（未设置bodyBgImg时才生效）， 默认'card'。 说明：card时背景显示灰色衬托出卡片样式，line时背景显示纯色，并且部分模块带线条边框
 
     // contentBgStyle: 1,
