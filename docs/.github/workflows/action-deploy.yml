@@ -10,7 +10,7 @@ jobs:
     - name: vuepress-deploy
       uses: xiong201/java-notes@main
       env:
-        ACCESS_TOKEN: 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
+        ACCESS_TOKEN: ${{secrets.ACCESS_TOKEN}}
         TARGET_REPO: xiong201/java-notes
         TARGET_BRANCH: gh-pages
         BUILD_SCRIPT: yarn && yarn build
