@@ -1,0 +1,17 @@
+name: Build and Deploy
+on: [push]
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses:  xiong201/java-notes@main
+
+    - name: vuepress-deploy
+      uses: xiong201/java-notes@main
+      env:
+        ACCESS_TOKEN: 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
+        TARGET_REPO: xiong201/java-notes
+        TARGET_BRANCH: gh-pages
+        BUILD_SCRIPT: yarn && yarn build
+        BUILD_DIR: /
