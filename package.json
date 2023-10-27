@@ -8,7 +8,8 @@
     "prebuild": "vdoing",
     "updateTheme": "yarn remove vuepress-theme-vdoing && rm -rf node_modules && yarn && yarn add vuepress-theme-vdoing -D",
     "editFm": "node utils/editFrontmatter.js",
-    "deploy": "bash deploy.sh"
+    "deploy": "bash deploy.sh",
+    "windows-dev": "set NODE_OPTIONS=--openssl-legacy-provider && node --max_old_space_size=4096 ./node_modules/vuepress/cli.js dev docs"
   },
   "license": "MIT",
   "devDependencies": {
