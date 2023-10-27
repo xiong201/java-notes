@@ -17,7 +17,7 @@ jobs:
 
     - name: vuepress-deploy
       env:
-        ACCESS_TOKEN: ${{secrets.ACCESS_TOKEN}}
+        GITHUB_TOKEN: ${{secrets.ACCESS_TOKEN}}
       run: |
           push_addr=git@github.com:xiong201/java-notes.git
           commit_info='git describe --all --always --long'
