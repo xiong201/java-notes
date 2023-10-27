@@ -20,6 +20,7 @@ jobs:
           push_addr=git@github.com:xiong201/java-notes.git
           commit_info=`git describe --all --always --long`
           deploy_branch=gh-pages
+          npm install 
           npm run build
           cd docs/.vuepress/dist
           git init
