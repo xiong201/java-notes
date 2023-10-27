@@ -19,11 +19,15 @@ jobs:
       run: |
           push_addr=git@github.com:xiong201/java-notes.git
           commit_info=`git describe --all --always --long`
+          user_name=`xiong201`
+          user_email=`1963942081@qq.com'
           deploy_branch=gh-pages
           npm install 
           npm run build
           cd docs/.vuepress/dist
           git init
+          git config user.name ${user_name}
+          git config user.email ${user_email}
           git add -A
           git commit -m "deploy, $commit_info"
           git push -f $push_addr HEAD:$deploy_branch
