@@ -6,8 +6,6 @@ jobs:
     strategy:
       matrix:
         node-version: [v18.18.2]
-    env:
-      GITHUB_TOKEN: ${{secrets.ACCESS_TOKEN}}
     steps:
     - name: Checkout
       uses: actions/checkout@v1
@@ -17,19 +15,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }} 
 
-    - name: vuepress-deploy
-      run: |
-          push_addr=git@github.com:xiong201/java-notes.git
-          commit_info='git describe --all --always --long'
-          user_name='xiong201'
-          user_email='1963942081@qq.com'
-          deploy_branch=gh-pages
-          npm install 
-          npm run build
-          cd docs/.vuepress/dist
-          git init
-          git config user.name ${user_name}
-          git config user.email ${user_email}
-          git add -A
-          git commit -m "deploy, $commit_info"
-          git push -f $push_addr HEAD:$deploy_branch
+    - name: run deploy.sh
+      env:
+        GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }} 
+      run: npm install && npm run deploy # 执行的命令
