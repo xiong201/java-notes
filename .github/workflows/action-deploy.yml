@@ -26,5 +26,3 @@ jobs:
           git add -A
           git commit -m "deploy, $commit_info"
           git push -f $push_addr HEAD:$deploy_branch
-          cd -
-          rm -rf $dist_path
