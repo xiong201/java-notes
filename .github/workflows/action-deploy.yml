@@ -3,15 +3,29 @@ on: [push]
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14.x]
     steps:
     - name: Checkout
-      uses:  actions/checkout@v4
+      uses: actions/checkout@v1
+
+    - name: Use Node.js ${{ matrix.node-version }} 
+      uses: actions/setup-node@v1 
+        with:
+          node-version: ${{ matrix.node-version }} 
 
     - name: vuepress-deploy
-      uses: jenkey2011/vuepress-deploy@v2.0.0
-      env:
-        ACCESS_TOKEN: ${{secrets.ACCESS_TOKEN}}
-        TARGET_REPO: xiong201/java-notes
-        TARGET_BRANCH: gh-pages
-        BUILD_SCRIPT: yarn && yarn build
-        BUILD_DIR: /
+      run: |
+          push_addr=git@github.com:xiong201/java-notes.git
+          commit_info=`git describe --all --always --long`
+          deploy_branch=gh-pages
+          yarn
+          yarn build
+          cd docs/.vuepress/dist
+          git init
+          git add -A
+          git commit -m "deploy, $commit_info"
+          git push -f $push_addr HEAD:$deploy_branch
+          cd -
+          rm -rf $dist_path
