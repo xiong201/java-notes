@@ -18,9 +18,9 @@ jobs:
     - name: vuepress-deploy
       run: |
           push_addr=git@github.com:xiong201/java-notes.git
-          commit_info=`git describe --all --always --long`
-          user_name=`xiong201`
-          user_email=`1963942081@qq.com'
+          commit_info='git describe --all --always --long'
+          user_name='xiong201'
+          user_email='1963942081@qq.com'
           deploy_branch=gh-pages
           npm install 
           npm run build
